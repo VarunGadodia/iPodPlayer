@@ -152,6 +152,7 @@
     justify-content: space-between;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     transition: background 0.1s;
+    cursor: pointer;
   }
 
   .menu-item.selected {
@@ -643,6 +644,11 @@ function renderMenu() {
     const el = document.createElement('div');
     el.className = 'menu-item' + (i === state.menuIndex ? ' selected' : '');
     el.innerHTML = `<span>${item.label}</span><span class="arrow">${item.arrow}</span>`;
+    el.addEventListener('click', () => {
+      state.menuIndex = i;
+      renderMenu();
+      selectMenuItem();
+    });
     list.appendChild(el);
   });
   const selected = list.querySelector('.selected');
@@ -656,6 +662,11 @@ function renderSongs() {
     const el = document.createElement('div');
     el.className = 'song-item' + (i === state.songIndex ? ' selected' : '');
     el.innerHTML = `<span class="song-title">${song.title}</span><span class="song-artist">${song.artist}</span>`;
+    el.addEventListener('click', () => {
+      state.songIndex = i;
+      renderSongs();
+      selectSong();
+    });
     list.appendChild(el);
   });
   // Scroll selected into view
