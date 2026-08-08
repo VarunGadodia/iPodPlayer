@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>iPod</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #1a1a1a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── iPod body ── */
+  .ipod {
+    width: 280px;
+    height: 500px;
+    background: linear-gradient(145deg, #f0f0f0 0%, #d4d4d4 50%, #c8c8c8 100%);
+    border-radius: 28px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    box-shadow:
+      0 1px 0 #fff inset,
+      0 -1px 0 #aaa inset,
+      1px 0 0 #ddd inset,
+      -1px 0 0 #ddd inset,
+      0 20px 60px rgba(0,0,0,0.5),
+      0 2px 8px rgba(0,0,0,0.3);
+    position: relative;
+  }
+
+  .ipod::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
+    border-radius: 28px 28px 0 0;
+    pointer-events: none;
+  }
+
+  /* ── Screen ── */
+  .screen {
+    width: 244px;
+    height: 196px;
+    background: #1c1c1e;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.4) inset,
+      0 0 0 1px rgba(0,0,0,0.15);
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 22px;
+    background: #2c2c2e;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #8e8e93;
+    letter-spacing: 0.3px;
+    border-bottom: 1px solid #3a3a3c;
+  }
+
+  .status-bar .battery {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .battery-icon {
+    width: 18px;
+    height: 9px;
+    border: 1px solid #8e8e93;
+    border-radius: 2px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 1px;
+  }
+
+  .battery-icon::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    width: 2px;
+    height: 5px;
+    background: #8e8e93;
+    border-radius: 0 1px 1px 0;
+  }
+
+  .battery-fill {
+    width: 70%;
+    height: 100%;
+    background: #30d158;
+    border-radius: 1px;
+  }
+
+  /* ── Screen views ── */
+  .view {
+    display: none;
+    height: 174px;
+    overflow: hidden;
+  }
+
+  .view.active { display: flex; flex-direction: column; }
+
+  /* Menu view */
+  .menu-view { padding: 0; }
+
+  .menu-header {
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: #2c2c2e;
+    border-bottom: 1px solid #3a3a3c;
+    letter-spacing: -0.2px;
+  }
+
+  .menu-list {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .menu-item {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #e5e5ea;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.1s;
+  }
+
+  .menu-item.selected {
+    background: #0a84ff;
+    color: #fff;
+  }
+
+  .menu-item .arrow {
+    font-size: 10px;
+    opacity: 0.5;
+  }
+
+  .menu-item.selected .arrow { opacity: 1; }
+
+  /* Now Playing view */
+  .now-playing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    height: 174px;
+  }
+
+  .album-art {
+    width: 80px;
+    height: 80px;
+    background: #2c2c2e;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    margin-bottom: 6px;
+  }
+
+  .album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .album-art .placeholder-icon {
+    font-size: 28px;
+    color: #48484a;
+  }
+
+  .track-info {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .track-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-artist {
+    font-size: 10px;
+    color: #8e8e93;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+  }
+
+  /* Progress bar */
+  .progress-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .progress-time {
+    font-size: 8px;
+    color: #8e8e93;
+    font-variant-numeric: tabular-nums;
+    min-width: 24px;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: #3a3a3c;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #0a84ff;
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.3s linear;
+  }
+
+  /* Playback indicators */
+  .playback-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .play-indicator {
+    font-size: 9px;
+    color: #8e8e93;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  /* Volume bar */
+  .volume-container {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .vol-icon { font-size: 8px; color: #636366; }
+
+  .volume-bar {
+    flex: 1;
+    height: 3px;
+    background: #3a3a3c;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .volume-fill {
+    height: 100%;
+    background: #636366;
+    border-radius: 2px;
+    width: 60%;
+  }
+
+  /* Songs list view */
+  .songs-view { padding: 0; }
+
+  /* ── Click Wheel ── */
+  .wheel-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin-top: auto;
+    margin-bottom: 4px;
+  }
+
+  .wheel {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(145deg, #e8e8e8, #d0d0d0);
+    border-radius: 50%;
+    position: relative;
+    box-shadow:
+      0 1px 0 #f0f0f0 inset,
+      0 -1px 0 #b0b0b0 inset,
+      0 2px 6px rgba(0,0,0,0.15);
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  .wheel::before {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px; right: 2px; bottom: 2px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Center button */
+  .center-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(145deg, #f5f5f5, #e0e0e0);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.15),
+      0 1px 0 #fff inset;
+    z-index: 2;
+    transition: transform 0.1s;
+  }
+
+  .center-btn:active {
+    transform: translate(-50%, -50%) scale(0.95);
+    background: linear-gradient(145deg, #e8e8e8, #d5d5d5);
+  }
+
+  /* Wheel labels */
+  .wheel-label {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 600;
+    color: #636366;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .wheel-label.top    { top: 14px; left: 50%; transform: translateX(-50%); }
+  .wheel-label.bottom { bottom: 14px; left: 50%; transform: translateX(-50%); }
+  .wheel-label.left   { left: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+  .wheel-label.right  { right: 14px; top: 50%; transform: translateY(-50%); font-size: 14px; }
+
+  /* Touch zones on wheel */
+  .wheel-zone {
+    position: absolute;
+    z-index: 1;
+    cursor: pointer;
+  }
+
+  .wheel-zone.top    { top: 0; left: 25%; width: 50%; height: 30%; border-radius: 100px 100px 0 0; }
+  .wheel-zone.bottom { bottom: 0; left: 25%; width: 50%; height: 30%; border-radius: 0 0 100px 100px; }
+  .wheel-zone.left   { left: 0; top: 25%; width: 30%; height: 50%; border-radius: 100px 0 0 100px; }
+  .wheel-zone.right  { right: 0; top: 25%; width: 30%; height: 50%; border-radius: 0 100px 100px 0; }
+
+  /* ── Spotify connect screen ── */
+  .connect-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 174px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .connect-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .connect-text {
+    font-size: 11px;
+    color: #8e8e93;
+    line-height: 1.5;
+  }
+
+  .connect-text strong {
+    color: #1db954;
+    font-weight: 600;
+  }
+
+  /* ── Ripple effect ── */
+  .wheel-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.06);
+    transform: scale(0);
+    animation: ripple 0.4s ease-out;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  @keyframes ripple {
+    to { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* ── Scroll indicator ── */
+  .scroll-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 4;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .scroll-indicator.visible { opacity: 1; }
+
+  .scroll-indicator svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Ambient glow when playing ── */
+  .ipod.playing::after {
+    content: '';
+    position: absolute;
+    top: -20px; left: -20px; right: -20px; bottom: -20px;
+    border-radius: 40px;
+    background: radial-gradient(ellipse at center, rgba(10,132,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    animation: pulse-glow 3s ease-in-out infinite;
+    z-index: -1;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* ── Song list for demo ── */
+  .song-item {
+    padding: 7px 12px;
+    font-size: 11px;
+    color: #e5e5ea;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .song-item.selected {
+    background: #0a84ff;
+    color: #fff;
+  }
+
+  .song-item .song-title {
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  .song-item .song-artist {
+    font-size: 9px;
+    opacity: 0.6;
+    margin-top: 1px;
+  }
+
+  .song-item.selected .song-artist { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<div class="ipod" id="ipod">
+  <!-- Screen -->
+  <div class="screen">
+    <div class="status-bar">
+      <span>iPod</span>
+      <div class="battery">
+        <div class="battery-icon"><div class="battery-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- Menu View -->
+    <div class="view menu-view active" id="menuView">
+      <div class="menu-header">iPod</div>
+      <div class="menu-list" id="menuList"></div>
+    </div>
+
+    <!-- Songs View -->
+    <div class="view songs-view" id="songsView">
+      <div class="menu-header" id="songsHeader">Songs</div>
+      <div class="menu-list" id="songsList"></div>
+    </div>
+
+    <!-- Now Playing View -->
+    <div class="view now-playing" id="nowPlayingView">
+      <div class="album-art" id="albumArt">
+        <span class="placeholder-icon">♫</span>
+      </div>
+      <div class="track-info">
+        <div class="track-name" id="trackName">Not Playing</div>
+        <div class="track-artist" id="trackArtist">—</div>
+      </div>
+      <div class="progress-container">
+        <span class="progress-time" id="elapsed">0:00</span>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="progress-time" id="remaining">0:00</span>
+      </div>
+      <div class="playback-status">
+        <span class="play-indicator" id="playIndicator">▶ PLAY</span>
+      </div>
+      <div class="volume-container">
+        <span class="vol-icon">🔈</span>
+        <div class="volume-bar"><div class="volume-fill" id="volumeFill"></div></div>
+        <span class="vol-icon">🔊</span>
+      </div>
+    </div>
+
+    <!-- Spotify Connect View -->
+    <div class="view connect-view" id="connectView">
+      <div class="connect-icon">🎵</div>
+      <div class="connect-text">
+        Connect to <strong>Spotify</strong><br>
+        to play your music.<br><br>
+        <span style="font-size:9px; color:#636366">Press SELECT to connect</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Click Wheel -->
+  <div class="wheel-container">
+    <div class="wheel" id="wheel">
+      <span class="wheel-label top">MENU</span>
+      <span class="wheel-label bottom">▶ ❚❚</span>
+      <span class="wheel-label left">◀◀</span>
+      <span class="wheel-label right">▶▶</span>
+
+      <div class="wheel-zone top" data-action="menu"></div>
+      <div class="wheel-zone bottom" data-action="playpause"></div>
+      <div class="wheel-zone left" data-action="prev"></div>
+      <div class="wheel-zone right" data-action="next"></div>
+
+      <button class="center-btn" id="centerBtn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// iPod Controller
+// ═══════════════════════════════════════
+
+const state = {
+  currentView: 'menu',       // menu | songs | nowPlaying | connect
+  viewStack: [],              // navigation history
+  menuIndex: 0,
+  songIndex: 0,
+  isPlaying: false,
+  volume: 0.6,
+  currentTrack: null,
+  progress: 0,
+  duration: 0,
+  progressInterval: null,
+  // Spotify
+  spotifyConnected: false,
+  spotifyPlayer: null,
+  spotifyToken: null,
+  spotifyDeviceId: null,
+};
+
+// ── Demo data ──
+const mainMenu = [
+  { label: 'Now Playing', action: 'nowPlaying', arrow: '›' },
+  { label: 'Songs', action: 'songs', arrow: '›' },
+  { label: 'Artists', action: 'artists', arrow: '›' },
+  { label: 'Albums', action: 'albums', arrow: '›' },
+  { label: 'Playlists', action: 'playlists', arrow: '›' },
+  { label: 'Connect Spotify', action: 'connect', arrow: '›' },
+];
+
+const demoSongs = [
+  { title: 'Blinding Lights', artist: 'The Weeknd', duration: 200 },
+  { title: 'Levitating', artist: 'Dua Lipa', duration: 203 },
+  { title: 'Shape of You', artist: 'Ed Sheeran', duration: 234 },
+  { title: 'Starboy', artist: 'The Weeknd', duration: 230 },
+  { title: 'Peaches', artist: 'Justin Bieber', duration: 198 },
+  { title: 'Dynamite', artist: 'BTS', duration: 199 },
+  { title: 'Tum Se Hi', artist: 'Mohit Chauhan', duration: 325 },
+  { title: 'Pehla Nasha', artist: 'Udit Narayan', duration: 296 },
+  { title: 'Kesariya', artist: 'Arijit Singh', duration: 268 },
+  { title: 'Maan Meri Jaan', artist: 'King', duration: 210 },
+];
+
+// ── Haptic feedback ──
+function haptic(type = 'light') {
+  if (!navigator.vibrate) return;
+  switch (type) {
+    case 'light':  navigator.vibrate(8); break;
+    case 'medium': navigator.vibrate(15); break;
+    case 'heavy':  navigator.vibrate([10, 30, 10]); break;
+    case 'tick':   navigator.vibrate(4); break;
+  }
+}
+
+// ── Audio click sound (subtle) ──
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function clickSound() {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = 1200;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.05);
+}
+
+// ── Render functions ──
+function renderMenu() {
+  const list = document.getElementById('menuList');
+  list.innerHTML = '';
+  mainMenu.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.className = 'menu-item' + (i === state.menuIndex ? ' selected' : '');
+    el.innerHTML = `<span>${item.label}</span><span class="arrow">${item.arrow}</span>`;
+    list.appendChild(el);
+  });
+}
+
+function renderSongs() {
+  const list = document.getElementById('songsList');
+  list.innerHTML = '';
+  demoSongs.forEach((song, i) => {
+    const el = document.createElement('div');
+    el.className = 'song-item' + (i === state.songIndex ? ' selected' : '');
+    el.innerHTML = `<span class="song-title">${song.title}</span><span class="song-artist">${song.artist}</span>`;
+    list.appendChild(el);
+  });
+  // Scroll selected into view
+  const selected = list.querySelector('.selected');
+  if (selected) selected.scrollIntoView({ block: 'nearest' });
+}
+
+function renderNowPlaying() {
+  const track = state.currentTrack;
+  if (!track) return;
+  document.getElementById('trackName').textContent = track.title;
+  document.getElementById('trackArtist').textContent = track.artist;
+  document.getElementById('playIndicator').textContent = state.isPlaying ? '❚❚ PAUSE' : '▶ PLAY';
+  document.getElementById('ipod').classList.toggle('playing', state.isPlaying);
+
+  // Album art
+  const artEl = document.getElementById('albumArt');
+  if (track.albumArt) {
+    artEl.innerHTML = `<img src="${track.albumArt}" alt="album art">`;
+  } else {
+    artEl.innerHTML = '<span class="placeholder-icon">♫</span>';
+  }
+}
+
+function updateProgress() {
+  if (!state.currentTrack) return;
+  const pct = state.duration > 0 ? (state.progress / state.duration) * 100 : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('elapsed').textContent = formatTime(state.progress);
+  document.getElementById('remaining').textContent = '-' + formatTime(state.duration - state.progress);
+}
+
+function formatTime(s) {
+  s = Math.max(0, Math.floor(s));
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+// ── View switching ──
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const viewMap = {
+    menu: 'menuView',
+    songs: 'songsView',
+    nowPlaying: 'nowPlayingView',
+    connect: 'connectView',
+  };
+  document.getElementById(viewMap[name]).classList.add('active');
+  state.currentView = name;
+}
+
+function pushView(name) {
+  state.viewStack.push(state.currentView);
+  showView(name);
+}
+
+function popView() {
+  if (state.viewStack.length === 0) return;
+  const prev = state.viewStack.pop();
+  showView(prev);
+  if (prev === 'menu') renderMenu();
+  if (prev === 'songs') renderSongs();
+}
+
+// ── Actions ──
+function selectMenuItem() {
+  const item = mainMenu[state.menuIndex];
+  haptic('medium');
+  clickSound();
+
+  switch (item.action) {
+    case 'nowPlaying':
+      pushView('nowPlaying');
+      renderNowPlaying();
+      updateProgress();
+      break;
+    case 'songs':
+      state.songIndex = 0;
+      pushView('songs');
+      renderSongs();
+      break;
+    case 'connect':
+      pushView('connect');
+      break;
+    case 'artists':
+    case 'albums':
+    case 'playlists':
+      // Placeholder — these would pull from Spotify when connected
+      pushView('songs');
+      renderSongs();
+      break;
+  }
+}
+
+function selectSong() {
+  const song = demoSongs[state.songIndex];
+  haptic('medium');
+  clickSound();
+  state.currentTrack = song;
+  state.progress = 0;
+  state.duration = song.duration;
+  state.isPlaying = true;
+  startProgress();
+  pushView('nowPlaying');
+  renderNowPlaying();
+  updateProgress();
+}
+
+function togglePlayPause() {
+  haptic('medium');
+  clickSound();
+  if (!state.currentTrack) {
+    // Play first song
+    state.currentTrack = demoSongs[0];
+    state.progress = 0;
+    state.duration = demoSongs[0].duration;
+    state.isPlaying = true;
+    startProgress();
+    if (state.currentView === 'nowPlaying') {
+      renderNowPlaying();
+      updateProgress();
+    }
+    return;
+  }
+  state.isPlaying = !state.isPlaying;
+  if (state.isPlaying) {
+    startProgress();
+  } else {
+    stopProgress();
+  }
+  if (state.currentView === 'nowPlaying') renderNowPlaying();
+}
+
+function nextTrack() {
+  haptic('light');
+  clickSound();
+  if (!state.currentTrack) return;
+  const idx = demoSongs.findIndex(s => s.title === state.currentTrack.title);
+  const next = (idx + 1) % demoSongs.length;
+  state.currentTrack = demoSongs[next];
+  state.progress = 0;
+  state.duration = demoSongs[next].duration;
+  if (state.currentView === 'nowPlaying') {
+    renderNowPlaying();
+    updateProgress();
+  }
+}
+
+function prevTrack() {
+  haptic('light');
+  clickSound();
+  if (!state.currentTrack) return;
+  // If more than 3s in, restart; otherwise go prev
+  if (state.progress > 3) {
+    state.progress = 0;
+    updateProgress();
+    return;
+  }
+  const idx = demoSongs.findIndex(s => s.title === state.currentTrack.title);
+  const prev = (idx - 1 + demoSongs.length) % demoSongs.length;
+  state.currentTrack = demoSongs[prev];
+  state.progress = 0;
+  state.duration = demoSongs[prev].duration;
+  if (state.currentView === 'nowPlaying') {
+    renderNowPlaying();
+    updateProgress();
+  }
+}
+
+function startProgress() {
+  stopProgress();
+  state.progressInterval = setInterval(() => {
+    if (state.isPlaying && state.currentTrack) {
+      state.progress += 1;
+      if (state.progress >= state.duration) {
+        nextTrack();
+      }
+      if (state.currentView === 'nowPlaying') updateProgress();
+    }
+  }, 1000);
+}
+
+function stopProgress() {
+  if (state.progressInterval) {
+    clearInterval(state.progressInterval);
+    state.progressInterval = null;
+  }
+}
+
+// ── Scroll wheel detection ──
+const wheel = document.getElementById('wheel');
+let lastAngle = null;
+let accumulatedAngle = 0;
+const SCROLL_THRESHOLD = 25; // degrees per tick
+
+function getAngle(clientX, clientY) {
+  const rect = wheel.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  return Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI);
+}
+
+function isInCenter(clientX, clientY) {
+  const rect = wheel.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const dist = Math.sqrt((clientX - cx) ** 2 + (clientY - cy) ** 2);
+  return dist < 36; // center button radius
+}
+
+function handleScrollTick(direction) {
+  haptic('tick');
+  clickSound();
+
+  if (state.currentView === 'menu') {
+    state.menuIndex = Math.max(0, Math.min(mainMenu.length - 1,
+      state.menuIndex + direction));
+    renderMenu();
+  } else if (state.currentView === 'songs') {
+    state.songIndex = Math.max(0, Math.min(demoSongs.length - 1,
+      state.songIndex + direction));
+    renderSongs();
+  } else if (state.currentView === 'nowPlaying') {
+    // Scroll adjusts volume
+    state.volume = Math.max(0, Math.min(1, state.volume + direction * 0.05));
+    document.getElementById('volumeFill').style.width = (state.volume * 100) + '%';
+  }
+}
+
+// Pointer events for wheel scrolling
+let isScrolling = false;
+
+wheel.addEventListener('pointerdown', (e) => {
+  if (isInCenter(e.clientX, e.clientY)) return;
+  isScrolling = true;
+  lastAngle = getAngle(e.clientX, e.clientY);
+  accumulatedAngle = 0;
+  wheel.setPointerCapture(e.pointerId);
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+});
+
+wheel.addEventListener('pointermove', (e) => {
+  if (!isScrolling) return;
+  const angle = getAngle(e.clientX, e.clientY);
+  if (lastAngle !== null) {
+    let delta = angle - lastAngle;
+    // Handle wrap-around at ±180
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    accumulatedAngle += delta;
+
+    while (accumulatedAngle >= SCROLL_THRESHOLD) {
+      handleScrollTick(1);  // clockwise = down/increase
+      accumulatedAngle -= SCROLL_THRESHOLD;
+    }
+    while (accumulatedAngle <= -SCROLL_THRESHOLD) {
+      handleScrollTick(-1); // counter-clockwise = up/decrease
+      accumulatedAngle += SCROLL_THRESHOLD;
+    }
+  }
+  lastAngle = angle;
+});
+
+wheel.addEventListener('pointerup', () => {
+  isScrolling = false;
+  lastAngle = null;
+});
+
+wheel.addEventListener('pointercancel', () => {
+  isScrolling = false;
+  lastAngle = null;
+});
+
+// ── Button zones ──
+document.querySelectorAll('.wheel-zone').forEach(zone => {
+  zone.addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const action = zone.dataset.action;
+    switch (action) {
+      case 'menu':
+        haptic('medium');
+        clickSound();
+        popView();
+        break;
+      case 'playpause': togglePlayPause(); break;
+      case 'prev': prevTrack(); break;
+      case 'next': nextTrack(); break;
+    }
+  });
+});
+
+// ── Center button ──
+document.getElementById('centerBtn').addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  switch (state.currentView) {
+    case 'menu': selectMenuItem(); break;
+    case 'songs': selectSong(); break;
+    case 'connect': initSpotify(); break;
+    case 'nowPlaying': togglePlayPause(); break;
+  }
+});
+
+// ── Keyboard support ──
+document.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case 'ArrowUp':    handleScrollTick(-1); break;
+    case 'ArrowDown':  handleScrollTick(1); break;
+    case 'ArrowLeft':  prevTrack(); break;
+    case 'ArrowRight': nextTrack(); break;
+    case 'Enter':
+      if (state.currentView === 'menu') selectMenuItem();
+      else if (state.currentView === 'songs') selectSong();
+      else if (state.currentView === 'connect') initSpotify();
+      else togglePlayPause();
+      break;
+    case 'Escape':
+    case 'Backspace':
+      popView();
+      break;
+    case ' ':
+      e.preventDefault();
+      togglePlayPause();
+      break;
+  }
+});
+
+
+// ═══════════════════════════════════════
+// SPOTIFY INTEGRATION
+// ═══════════════════════════════════════
+// To connect Spotify:
+// 1. Go to https://developer.spotify.com/dashboard
+// 2. Create an app → set redirect URI to this page's URL
+// 3. Put your Client ID below
+// 4. The iPod will auth via PKCE (no server needed)
+
+const SPOTIFY_CLIENT_ID = ''; // ← YOUR CLIENT ID HERE
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+const SCOPES = 'streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state';
+
+function initSpotify() {
+  if (!SPOTIFY_CLIENT_ID) {
+    alert('Set your Spotify Client ID in the code first!\n\nSee: https://developer.spotify.com/dashboard');
+    return;
+  }
+  // PKCE auth flow
+  const codeVerifier = generateRandomString(128);
+  sessionStorage.setItem('spotify_verifier', codeVerifier);
+
+  generateCodeChallenge(codeVerifier).then(challenge => {
+    const params = new URLSearchParams({
+      client_id: SPOTIFY_CLIENT_ID,
+      response_type: 'code',
+      redirect_uri: REDIRECT_URI,
+      scope: SCOPES,
+      code_challenge_method: 'S256',
+      code_challenge: challenge,
+    });
+    window.location = 'https://accounts.spotify.com/authorize?' + params.toString();
+  });
+}
+
+function generateRandomString(length) {
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const values = crypto.getRandomValues(new Uint8Array(length));
+  return values.reduce((acc, x) => acc + possible[x % possible.length], '');
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+// Handle callback
+async function handleSpotifyCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+
+  const verifier = sessionStorage.getItem('spotify_verifier');
+  const body = new URLSearchParams({
+    client_id: SPOTIFY_CLIENT_ID,
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: verifier,
+  });
+
+  const resp = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+
+  const data = await resp.json();
+  if (data.access_token) {
+    state.spotifyToken = data.access_token;
+    state.spotifyConnected = true;
+    window.history.replaceState({}, '', REDIRECT_URI);
+    initSpotifyPlayer();
+  }
+}
+
+function initSpotifyPlayer() {
+  // Load Spotify Web Playback SDK
+  const script = document.createElement('script');
+  script.src = 'https://sdk.scdn.co/spotify-player.js';
+  document.body.appendChild(script);
+
+  window.onSpotifyWebPlaybackSDKReady = () => {
+    const player = new Spotify.Player({
+      name: 'iPod Player',
+      getOAuthToken: cb => cb(state.spotifyToken),
+      volume: state.volume,
+    });
+
+    player.addListener('ready', ({ device_id }) => {
+      state.spotifyDeviceId = device_id;
+      state.spotifyPlayer = player;
+      // Update menu to show connected status
+      mainMenu[5].label = '✓ Spotify Connected';
+      renderMenu();
+      showView('menu');
+      loadSpotifyLibrary();
+    });
+
+    player.addListener('player_state_changed', (s) => {
+      if (!s) return;
+      const track = s.track_window.current_track;
+      state.currentTrack = {
+        title: track.name,
+        artist: track.artists.map(a => a.name).join(', '),
+        albumArt: track.album.images[0]?.url,
+        duration: track.duration_ms / 1000,
+        uri: track.uri,
+      };
+      state.isPlaying = !s.paused;
+      state.progress = s.position / 1000;
+      state.duration = track.duration_ms / 1000;
+      if (state.currentView === 'nowPlaying') {
+        renderNowPlaying();
+        updateProgress();
+      }
+    });
+
+    player.connect();
+  };
+}
+
+async function loadSpotifyLibrary() {
+  // Fetch user's saved tracks
+  const resp = await fetch('https://api.spotify.com/v1/me/tracks?limit=50', {
+    headers: { 'Authorization': 'Bearer ' + state.spotifyToken },
+  });
+  const data = await resp.json();
+  if (data.items) {
+    demoSongs.length = 0;
+    data.items.forEach(item => {
+      demoSongs.push({
+        title: item.track.name,
+        artist: item.track.artists.map(a => a.name).join(', '),
+        albumArt: item.track.album.images[0]?.url,
+        duration: item.track.duration_ms / 1000,
+        uri: item.track.uri,
+      });
+    });
+  }
+}
+
+// ── Init ──
+renderMenu();
+handleSpotifyCallback();
+</script>
+</body>
+</html>
