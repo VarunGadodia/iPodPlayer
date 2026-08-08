@@ -589,12 +589,12 @@ const state = {
 
 // ── Demo data ──
 const mainMenu = [
+  { label: '● Connect Spotify', action: 'connect', arrow: '›' },
   { label: 'Now Playing', action: 'nowPlaying', arrow: '›' },
   { label: 'Songs', action: 'songs', arrow: '›' },
   { label: 'Artists', action: 'artists', arrow: '›' },
   { label: 'Albums', action: 'albums', arrow: '›' },
   { label: 'Playlists', action: 'playlists', arrow: '›' },
-  { label: 'Connect Spotify', action: 'connect', arrow: '›' },
 ];
 
 const demoSongs = [
@@ -748,7 +748,7 @@ function selectMenuItem() {
       renderSongs();
       break;
     case 'connect':
-      pushView('connect');
+      initSpotify();
       break;
     case 'artists':
     case 'albums':
@@ -1050,7 +1050,17 @@ function initSpotify() {
       code_challenge_method: 'S256',
       code_challenge: challenge,
     });
-    window.location = 'https://accounts.spotify.com/authorize?' + params.toString();
+    const authUrl = 'https://accounts.spotify.com/authorize?' + params.toString();
+    console.log('Spotify auth URL:', authUrl);
+    console.log('Redirect URI:', REDIRECT_URI);
+    // Try redirect, fall back to new window
+    try {
+      window.location.href = authUrl;
+    } catch(e) {
+      window.open(authUrl, '_blank');
+    }
+  }).catch(err => {
+    alert('Error: ' + err.message);
   });
 }
 
@@ -1114,7 +1124,7 @@ function initSpotifyPlayer() {
       state.spotifyDeviceId = device_id;
       state.spotifyPlayer = player;
       // Update menu to show connected status
-      mainMenu[5].label = '✓ Spotify Connected';
+      mainMenu[0].label = '✓ Spotify Connected';
       renderMenu();
       showView('menu');
       loadSpotifyLibrary();
