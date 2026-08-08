@@ -768,10 +768,23 @@ function selectSong() {
   state.progress = 0;
   state.duration = song.duration;
   state.isPlaying = true;
-  startProgress();
   pushView('nowPlaying');
   renderNowPlaying();
   updateProgress();
+
+  if (state.spotifyConnected && song.uri && state.spotifyDeviceId) {
+    // Play via Spotify
+    fetch('https://api.spotify.com/v1/me/player/play?device_id=' + state.spotifyDeviceId, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + state.spotifyToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ uris: [song.uri] }),
+    }).catch(err => console.error('Spotify play error:', err));
+  } else {
+    startProgress();
+  }
 }
 
 function togglePlayPause() {
@@ -779,22 +792,20 @@ function togglePlayPause() {
   clickSound();
   if (!state.currentTrack) {
     // Play first song
-    state.currentTrack = demoSongs[0];
-    state.progress = 0;
-    state.duration = demoSongs[0].duration;
-    state.isPlaying = true;
-    startProgress();
-    if (state.currentView === 'nowPlaying') {
-      renderNowPlaying();
-      updateProgress();
-    }
+    state.songIndex = 0;
+    selectSong();
     return;
   }
-  state.isPlaying = !state.isPlaying;
-  if (state.isPlaying) {
-    startProgress();
+
+  if (state.spotifyConnected && state.spotifyPlayer) {
+    state.spotifyPlayer.togglePlay();
   } else {
-    stopProgress();
+    state.isPlaying = !state.isPlaying;
+    if (state.isPlaying) {
+      startProgress();
+    } else {
+      stopProgress();
+    }
   }
   if (state.currentView === 'nowPlaying') renderNowPlaying();
 }
@@ -803,14 +814,19 @@ function nextTrack() {
   haptic('light');
   clickSound();
   if (!state.currentTrack) return;
-  const idx = demoSongs.findIndex(s => s.title === state.currentTrack.title);
-  const next = (idx + 1) % demoSongs.length;
-  state.currentTrack = demoSongs[next];
-  state.progress = 0;
-  state.duration = demoSongs[next].duration;
-  if (state.currentView === 'nowPlaying') {
-    renderNowPlaying();
-    updateProgress();
+
+  if (state.spotifyConnected && state.spotifyPlayer) {
+    state.spotifyPlayer.nextTrack();
+  } else {
+    const idx = demoSongs.findIndex(s => s.title === state.currentTrack.title);
+    const next = (idx + 1) % demoSongs.length;
+    state.currentTrack = demoSongs[next];
+    state.progress = 0;
+    state.duration = demoSongs[next].duration;
+    if (state.currentView === 'nowPlaying') {
+      renderNowPlaying();
+      updateProgress();
+    }
   }
 }
 
@@ -818,20 +834,28 @@ function prevTrack() {
   haptic('light');
   clickSound();
   if (!state.currentTrack) return;
-  // If more than 3s in, restart; otherwise go prev
-  if (state.progress > 3) {
+
+  if (state.spotifyConnected && state.spotifyPlayer) {
+    if (state.progress > 3) {
+      state.spotifyPlayer.seek(0);
+    } else {
+      state.spotifyPlayer.previousTrack();
+    }
+  } else {
+    if (state.progress > 3) {
+      state.progress = 0;
+      updateProgress();
+      return;
+    }
+    const idx = demoSongs.findIndex(s => s.title === state.currentTrack.title);
+    const prev = (idx - 1 + demoSongs.length) % demoSongs.length;
+    state.currentTrack = demoSongs[prev];
     state.progress = 0;
-    updateProgress();
-    return;
-  }
-  const idx = demoSongs.findIndex(s => s.title === state.currentTrack.title);
-  const prev = (idx - 1 + demoSongs.length) % demoSongs.length;
-  state.currentTrack = demoSongs[prev];
-  state.progress = 0;
-  state.duration = demoSongs[prev].duration;
-  if (state.currentView === 'nowPlaying') {
-    renderNowPlaying();
-    updateProgress();
+    state.duration = demoSongs[prev].duration;
+    if (state.currentView === 'nowPlaying') {
+      renderNowPlaying();
+      updateProgress();
+    }
   }
 }
 
@@ -908,6 +932,7 @@ function handleScrollTick(direction) {
   } else if (state.currentView === 'nowPlaying') {
     state.volume = Math.max(0, Math.min(1, state.volume + direction * 0.05));
     document.getElementById('volumeFill').style.width = (state.volume * 100) + '%';
+    if (state.spotifyPlayer) state.spotifyPlayer.setVolume(state.volume);
   }
 }
 
@@ -1114,6 +1139,7 @@ function initSpotifyPlayer() {
   document.body.appendChild(script);
 
   window.onSpotifyWebPlaybackSDKReady = () => {
+    console.log('Spotify SDK ready');
     const player = new Spotify.Player({
       name: 'iPod Player',
       getOAuthToken: cb => cb(state.spotifyToken),
@@ -1121,13 +1147,56 @@ function initSpotifyPlayer() {
     });
 
     player.addListener('ready', ({ device_id }) => {
+      console.log('Spotify player ready, device:', device_id);
       state.spotifyDeviceId = device_id;
       state.spotifyPlayer = player;
-      // Update menu to show connected status
       mainMenu[0].label = '✓ Spotify Connected';
       renderMenu();
       showView('menu');
       loadSpotifyLibrary();
+
+      // Transfer playback to this device
+      fetch('https://api.spotify.com/v1/me/player', {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + state.spotifyToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ device_ids: [device_id], play: false }),
+      }).catch(err => console.error('Transfer playback error:', err));
+
+      // Poll progress every second when playing
+      setInterval(async () => {
+        if (state.spotifyConnected && state.isPlaying) {
+          const s = await player.getCurrentState();
+          if (s) {
+            state.progress = s.position / 1000;
+            state.duration = s.duration / 1000;
+            if (state.currentView === 'nowPlaying') updateProgress();
+          }
+        }
+      }, 1000);
+    });
+
+    player.addListener('not_ready', ({ device_id }) => {
+      console.log('Spotify device went offline:', device_id);
+    });
+
+    player.addListener('initialization_error', ({ message }) => {
+      console.error('Spotify init error:', message);
+      alert('Spotify requires a Premium account for Web Playback.');
+    });
+
+    player.addListener('authentication_error', ({ message }) => {
+      console.error('Spotify auth error:', message);
+      state.spotifyConnected = false;
+      mainMenu[0].label = '● Connect Spotify';
+      renderMenu();
+    });
+
+    player.addListener('account_error', ({ message }) => {
+      console.error('Spotify account error:', message);
+      alert('Spotify Premium is required for playback.');
     });
 
     player.addListener('player_state_changed', (s) => {
@@ -1143,33 +1212,42 @@ function initSpotifyPlayer() {
       state.isPlaying = !s.paused;
       state.progress = s.position / 1000;
       state.duration = track.duration_ms / 1000;
+      document.getElementById('ipod').classList.toggle('playing', state.isPlaying);
       if (state.currentView === 'nowPlaying') {
         renderNowPlaying();
         updateProgress();
       }
     });
 
-    player.connect();
+    player.connect().then(success => {
+      console.log('Spotify connect:', success ? 'OK' : 'FAILED');
+    });
   };
 }
 
 async function loadSpotifyLibrary() {
-  // Fetch user's saved tracks
-  const resp = await fetch('https://api.spotify.com/v1/me/tracks?limit=50', {
-    headers: { 'Authorization': 'Bearer ' + state.spotifyToken },
-  });
-  const data = await resp.json();
-  if (data.items) {
-    demoSongs.length = 0;
-    data.items.forEach(item => {
-      demoSongs.push({
-        title: item.track.name,
-        artist: item.track.artists.map(a => a.name).join(', '),
-        albumArt: item.track.album.images[0]?.url,
-        duration: item.track.duration_ms / 1000,
-        uri: item.track.uri,
-      });
+  try {
+    const resp = await fetch('https://api.spotify.com/v1/me/tracks?limit=50', {
+      headers: { 'Authorization': 'Bearer ' + state.spotifyToken },
     });
+    const data = await resp.json();
+    console.log('Spotify library loaded:', data.items?.length, 'tracks');
+    if (data.items && data.items.length > 0) {
+      demoSongs.length = 0;
+      data.items.forEach(item => {
+        demoSongs.push({
+          title: item.track.name,
+          artist: item.track.artists.map(a => a.name).join(', '),
+          albumArt: item.track.album.images[0]?.url,
+          duration: item.track.duration_ms / 1000,
+          uri: item.track.uri,
+        });
+      });
+      // Re-render songs if visible
+      if (state.currentView === 'songs') renderSongs();
+    }
+  } catch(err) {
+    console.error('Failed to load library:', err);
   }
 }
 
